@@ -6,6 +6,7 @@ import userRouter from "./api/routes/user.route.js";
 import authRouter from "./api/routes/auth.route.js";
 import listingRouter from "./api/routes/listing.route.js";
 import cookieParser from "cookie-parser";
+let Port = process.env.PORT || 4000;
 // import path from "path";
 dotenv.config();
 
@@ -23,7 +24,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.listen(3000, () => {
+app.listen(Port, () => {
   console.log("Server is running on port 3000!");
 });
 
