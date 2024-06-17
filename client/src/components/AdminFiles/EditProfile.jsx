@@ -6,7 +6,7 @@ import {
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
-import { app } from "../firebase";
+import { app } from "../../firebase";
 import {
   updateUserStart,
   updateUserSuccess,
@@ -15,12 +15,15 @@ import {
   deleteUserStart,
   deleteUserSuccess,
   signOutUserStart,
-} from "../redux/user/userSlice";
+} from "../../redux/user/userSlice";
+import { useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-export default function Profile() {
+import axios from "axios";
+export default function EditProfile() {
+  const { id } = useParams();
   const fileRef = useRef(null);
-  const { currentUser, loading, error } = useSelector((state) => state.user);
+  //   const { currentUser, loading, error } = useSelector((state) => state.user);
   const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
@@ -29,19 +32,38 @@ export default function Profile() {
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
   const dispatch = useDispatch();
-
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   // firebase storage
   // allow read;
   // allow write: if
   // request.resource.size < 2 * 1024 * 1024 &&
   // request.resource.contentType.matches('image/.*')
 
+  const getUser = async () => {
+    try {
+      console.log("get User Function run!");
+      setLoading(true);
+      const { data } = await axios.get(`/api/user/getuserbyadmin/${id}`);
+      console.log("User Detail IS: ", data);
+      setCurrentUser(data);
+      setLoading(false);
+    } catch (error) {
+      console.log("error is: ", error);
+      setError(error.message);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (file) {
       handleFileUpload(file);
     }
   }, [file]);
-
+  useEffect(() => {
+    getUser();
+  }, []);
   const handleFileUpload = (file) => {
     const storage = getStorage(app);
     const fileName = new Date().getTime() + file.name;
@@ -73,8 +95,8 @@ export default function Profile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      dispatch(updateUserStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+      //   dispatch(updateUserStart());
+      const res = await fetch(`/api/user/updatebyadmin/${id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,11 +105,10 @@ export default function Profile() {
       });
       const data = await res.json();
       if (data.success === false) {
-        dispatch(updateUserFailure(data.message));
         return;
       }
 
-      dispatch(updateUserSuccess(data));
+      //   dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
     } catch (error) {
       dispatch(updateUserFailure(error.message));
@@ -97,7 +118,7 @@ export default function Profile() {
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+      const res = await fetch(`/api/user/deletebyadmin/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -111,39 +132,35 @@ export default function Profile() {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      dispatch(signOutUserStart());
-      const res = await fetch(`/api/auth/signout`);
-      const data = await res.json();
-      if (data.success === false) {
-        dispatch(deleteUserFailure(data.message));
-        return;
-      }
-      dispatch(deleteUserSuccess(data));
-    } catch (error) {
-      dispatch(deleteUserFailure(data.message));
-    }
-  };
+  //   const handleSignOut = async () => {
+  //     try {
+  //       dispatch(signOutUserStart());
+  //       const res = await fetch("/api/auth/signout");
+  //       const data = await res.json();
+  //       if (data.success === false) {
+  //         dispatch(deleteUserFailure(data.message));
+  //         return;
+  //       }
+  //       dispatch(deleteUserSuccess(data));
+  //     } catch (error) {
+  //       dispatch(deleteUserFailure(data.message));
+  //     }
+  //   };
 
   const handleShowListings = async () => {
     try {
-      // console.log(process.env.REACT_APP_server);
-      console.log("handle show listing function run!");
-      setShowListingsError(false);
-      const res = await fetch(`/api/user/listings/${currentUser._id}`, {
-        method: "GET",
-      });
-
-      console.log("Profile user data is:", res);
-      const data = await res.json();
+      const { data } = await axios.get(
+        `http://localhost:4000/api/user/listingsbyadmin/${id}`
+      );
+      //   const data = await res.json();
+      console.log("User Listing Data is: ", data);
       if (data.success === false) {
         setShowListingsError(true);
         return;
       }
+
       setUserListings(data);
     } catch (error) {
-      console.log("error is:", error);
       setShowListingsError(true);
     }
   };
@@ -168,70 +185,76 @@ export default function Profile() {
   };
   return (
     <div className="p-3 max-w-lg mx-auto">
-      <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          onChange={(e) => setFile(e.target.files[0])}
-          type="file"
-          ref={fileRef}
-          hidden
-          accept="image/*"
-        />
-        <img
-          onClick={() => fileRef.current.click()}
-          src={formData.avatar || currentUser.avatar}
-          alt="profile"
-          className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
-        />
-        <p className="text-sm self-center">
-          {fileUploadError ? (
-            <span className="text-red-700">
-              Error Image upload (image must be less than 2 mb)
-            </span>
-          ) : filePerc > 0 && filePerc < 100 ? (
-            <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
-          ) : filePerc === 100 ? (
-            <span className="text-green-700">Image successfully uploaded!</span>
-          ) : (
-            ""
-          )}
-        </p>
-        <input
-          type="text"
-          placeholder="username"
-          defaultValue={currentUser.username}
-          id="username"
-          className="border p-3 rounded-lg"
-          onChange={handleChange}
-        />
-        <input
-          type="email"
-          placeholder="email"
-          id="email"
-          defaultValue={currentUser.email}
-          className="border p-3 rounded-lg"
-          onChange={handleChange}
-        />
-        <input
-          type="password"
-          placeholder="password"
-          onChange={handleChange}
-          id="password"
-          className="border p-3 rounded-lg"
-        />
-        <button
-          disabled={loading}
-          className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80"
-        >
-          {loading ? "Loading..." : "Update"}
-        </button>
-        <Link
-          className="bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95"
-          to={"/create-listing"}
-        >
-          Create Listing
-        </Link>
-      </form>
+      <h1 className="text-3xl font-semibold text-center my-7">EditProfile</h1>
+      {currentUser != null ? (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            onChange={(e) => setFile(e.target.files[0])}
+            type="file"
+            ref={fileRef}
+            hidden
+            accept="image/*"
+          />
+          <img
+            onClick={() => fileRef.current.click()}
+            src={formData.avatar || currentUser.avatar}
+            alt="EditProfile"
+            className="rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2"
+          />
+          <p className="text-sm self-center">
+            {fileUploadError ? (
+              <span className="text-red-700">
+                Error Image upload (image must be less than 2 mb)
+              </span>
+            ) : filePerc > 0 && filePerc < 100 ? (
+              <span className="text-slate-700">{`Uploading ${filePerc}%`}</span>
+            ) : filePerc === 100 ? (
+              <span className="text-green-700">
+                Image successfully uploaded!
+              </span>
+            ) : (
+              ""
+            )}
+          </p>
+          <input
+            type="text"
+            placeholder="username"
+            defaultValue={currentUser.username}
+            id="username"
+            className="border p-3 rounded-lg"
+            onChange={handleChange}
+          />
+          <input
+            type="email"
+            placeholder="email"
+            id="email"
+            defaultValue={currentUser.email}
+            className="border p-3 rounded-lg"
+            onChange={handleChange}
+          />
+          <input
+            type="password"
+            placeholder="password"
+            onChange={handleChange}
+            id="password"
+            className="border p-3 rounded-lg"
+          />
+          <button
+            disabled={loading}
+            className="bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80"
+          >
+            {loading ? "Loading..." : "Update"}
+          </button>
+          <Link
+            className="bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95"
+            to={"/create-listing"}
+          >
+            Create Listing
+          </Link>
+        </form>
+      ) : (
+        ""
+      )}
       <div className="flex justify-between mt-5">
         <span
           onClick={handleDeleteUser}
@@ -239,9 +262,9 @@ export default function Profile() {
         >
           Delete account
         </span>
-        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
+        {/* <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
           Sign out
-        </span>
+        </span> */}
       </div>
 
       <p className="text-red-700 mt-5">{error ? error : ""}</p>
