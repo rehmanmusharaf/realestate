@@ -24,7 +24,6 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/search" element={<Search />} />
         <Route path="/listing/:listingId" element={<Listing />} />
-        <Route path="/admindashboard" element={<AdminDashboard />} />
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/create-listing" element={<CreateListing />} />
@@ -33,6 +32,7 @@ export default function App() {
             element={<UpdateListing />}
           />
           <Route path="/editprofile/:id" element={<EditProfile />} />
+          <Route path="/admindashboard" element={<AdminDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

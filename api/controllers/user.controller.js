@@ -104,7 +104,6 @@ export const getAllUsers = async (req, res, next) => {
 
     const totalUsers = await User.countDocuments();
     const totalPages = Math.ceil(totalUsers / limit);
-
     // Get current date
     const now = new Date();
 

@@ -1,3 +1,5 @@
+import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import React, { useEffect, useState } from "react";
 import { Chart } from "chart.js";
 // import PieChartComponent from "./PieChartComponent";
@@ -8,8 +10,11 @@ import PropertiesTable from "./AdminFiles/PropertiesTable";
 import PropertyForm from "./AdminFiles/PropertyForm";
 import axios from "axios";
 import CreateListing from "../pages/CreateListing";
-
+import YourProperties from "./AdminFiles/YourProerties";
 const AdminDashboard = () => {
+  const dispatch = useDispatch();
+  const { currentUser, error } = useSelector((state) => state.user);
+
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState("");
   const [count, setCount] = useState(1);
@@ -24,6 +29,12 @@ const AdminDashboard = () => {
   const [currentPage2, setCurrentPage2] = useState(1);
   const [loading2, setLoading2] = useState(false);
   const [usersCount, setUsersCount] = useState(null);
+  const [rentListingCount, setRentListingCount] = useState(0);
+  const [saleListingCount, setSaleListingCount] = useState(0);
+  const [saleNotAvailableCount, setSaleNotAvailableCount] = useState(0);
+  const [rentNotAvailableCount, setRentNotAvailableCount] = useState(0);
+  const [revenue, setRevenue] = useState(0);
+
   let [page, setPage] = useState(1);
   let [page2, setPage2] = useState(1);
   const toggleDropdown = () => {
@@ -72,17 +83,17 @@ const AdminDashboard = () => {
       setPage2((prev) => {
         return 1 + prev;
       });
-
       setLoading2(true);
-      const { data } = await axios.get(`/api/listing/getlisting?page=${page2}`);
+      const { data } = await axios.get(
+        `/api/listing/getlisting?page=${page2}`,
+        { withCredentials: true }
+      );
       console.log("list data is: ", data);
 
       // Extract listing IDs from the current state
       const currentListingIds = new Set(
         totalListings.map((listing) => listing._id)
       );
-
-      // Filter out listings that are already in the state
       const newUniqueListings = data.listings.filter(
         (listing) => !currentListingIds.has(listing._id)
       );
@@ -93,6 +104,18 @@ const AdminDashboard = () => {
       setTotalPages2(data.totalPages);
       setCurrentPage2(data.currentPage);
       setListings(data.totalListings);
+      setRentListingCount(data.rentlistingcount);
+      setSaleListingCount(data.salelistingcount);
+      setSaleNotAvailableCount(data.salenotavailablecount);
+      setRentNotAvailableCount(data.rentnotavailablecount);
+      setRevenue(data.salesamount);
+      // console.log(
+      //   "listing availability count ",
+      //   data.rentlistingcount,
+      //   data.salelistingcount,
+      //   data.saleavailablecount,
+      //   data.rentavailablecount
+      // );
       setLoading2(false);
     } catch (error) {
       console.error("Error fetching listings:", error);
@@ -103,8 +126,10 @@ const AdminDashboard = () => {
   // Call the function to get users
 
   useEffect(() => {
-    getAllUsers(page);
-    getListing();
+    if (currentUser.role == "admin") {
+      getAllUsers(page);
+      getListing();
+    }
   }, []);
 
   return (
@@ -124,7 +149,7 @@ const AdminDashboard = () => {
                     <span
                       className="pb-1 md:pb-0 text-2xl md:text-base text-gray-400 md:text-gray-200 block md:inline-block "
                       onClick={() => setCount(1)}
-                      style={{ fontSize: "" }}
+                      style={{ fontSize: "", cursor: "pointer" }}
                     >
                       Dashboard
                     </span>
@@ -139,6 +164,7 @@ const AdminDashboard = () => {
                     <span
                       className="pb-1 md:pb-0 text-xs md:text-base text-gray-400 md:text-gray-200 block md:inline-block"
                       onClick={() => setCount(2)}
+                      style={{ cursor: "pointer" }}
                     >
                       Add Property
                     </span>
@@ -159,42 +185,43 @@ const AdminDashboard = () => {
                     <h1 className="font-bold pl-2">Analytics</h1>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap">
-                  <div className="w-full md:w-1/2 xl:w-1/3 p-6">
-                    <MetricCard
-                      title="Total Revenue"
-                      value="$3249"
-                      changeIcon="fas fa-caret-up"
-                      bgColor="bg-gradient-to-b from-green-200 to-green-100"
-                      borderColor="border-green-600"
-                      icon="fa-wallet"
-                      iconBg="bg-green-600"
-                    />
-                  </div>
-                  <div className="w-full md:w-1/2 xl:w-1/3 p-6">
-                    <MetricCard
-                      title="Total Users"
-                      value={totalUsers && totalUsers}
-                      changeIcon="fas fa-exchange-alt"
-                      bgColor="bg-gradient-to-b from-pink-200 to-pink-100"
-                      borderColor="border-pink-500"
-                      icon="fa-users"
-                      iconBg="bg-pink-600"
-                    />
-                  </div>
-                  <div className="w-full md:w-1/2 xl:w-1/3 p-6">
-                    <MetricCard
-                      title="Properties Registered"
-                      value={listings && listings}
-                      changeIcon="fas fa-caret-up"
-                      bgColor="bg-gradient-to-b from-yellow-200 to-yellow-100"
-                      borderColor="border-yellow-600"
-                      icon="fa-user-plus"
-                      iconBg="bg-yellow-600"
-                    />
-                  </div>
-                  {/* <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                {currentUser.role == "admin" && (
+                  <>
+                    <div className="flex flex-wrap">
+                      <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                        <MetricCard
+                          title="Total Revenue"
+                          value={`$ ${revenue && revenue}`}
+                          changeIcon="fas fa-caret-up"
+                          bgColor="bg-gradient-to-b from-green-200 to-green-100"
+                          borderColor="border-green-600"
+                          icon="fa-wallet"
+                          iconBg="bg-green-600"
+                        />
+                      </div>
+                      <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                        <MetricCard
+                          title="Total Users"
+                          value={totalUsers && totalUsers}
+                          changeIcon="fas fa-exchange-alt"
+                          bgColor="bg-gradient-to-b from-pink-200 to-pink-100"
+                          borderColor="border-pink-500"
+                          icon="fa-users"
+                          iconBg="bg-pink-600"
+                        />
+                      </div>
+                      <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                        <MetricCard
+                          title="Properties Registered"
+                          value={listings && listings}
+                          changeIcon="fas fa-caret-up"
+                          bgColor="bg-gradient-to-b from-yellow-200 to-yellow-100"
+                          borderColor="border-yellow-600"
+                          icon="fa-user-plus"
+                          iconBg="bg-yellow-600"
+                        />
+                      </div>
+                      {/* <div className="w-full md:w-1/2 xl:w-1/3 p-6">
                     <MetricCard
                       title="New Users"
                       value="2"
@@ -228,113 +255,186 @@ const AdminDashboard = () => {
                     />
                   </div> */}
 
-                  <div className="w-full md:w-1/2 xl:w-1/3 p-6">
-                    <h2>Properties Added vs Sold</h2>
+                      <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                        <h2>Properties Pending vs Sold-out</h2>
+                        {loading2 ? (
+                          <div
+                            role="status "
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}
+                          >
+                            <svg
+                              aria-hidden="true"
+                              className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                              viewBox="0 0 100 101"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                                fill="currentColor"
+                              />
+                              <path
+                                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                                fill="currentFill"
+                              />
+                            </svg>
+                            <span className="sr-only">Loading...</span>
+                          </div>
+                        ) : (
+                          <PieChartComponent
+                            addedProperties={
+                              ((saleListingCount - saleNotAvailableCount) /
+                                saleListingCount) *
+                              100
+                            }
+                            soldProperties={
+                              (saleNotAvailableCount / saleListingCount) * 100
+                            }
+                            propertytype="Property Sold-out"
+                          />
+                        )}
 
-                    <PieChartComponent
-                      addedProperties={80}
-                      soldProperties={20}
-                      propertytype="Property Sold"
-                    />
-
-                    {/* <PieGraph /> */}
-                  </div>
-                  <div className="w-full md:w-1/2 xl:w-1/3 p-6">
-                    <h2>Properties Added vs rent</h2>
-
-                    <PieChartComponent
-                      addedProperties={80}
-                      soldProperties={20}
-                      propertytype="Property rent-out"
-                    />
-
-                    {/* <PieGraph /> */}
-                  </div>
-                  <div className="w-full md:w-1/2 xl:w-1/2 p-6">
-                    {usersCount && (
-                      <BarChartComponent
-                        April={usersCount?.twoMonthsAgo}
-                        May={usersCount?.lastMonth}
-                        June={usersCount?.currentMonth}
+                        {/* <PieGraph /> */}
+                      </div>
+                      <div className="w-full md:w-1/2 xl:w-1/3 p-6">
+                        <h2>Properties Pending vs rent-out</h2>
+                        {loading2 ? (
+                          <div
+                            role="status "
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}
+                          >
+                            <svg
+                              aria-hidden="true"
+                              className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                              viewBox="0 0 100 101"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                                fill="currentColor"
+                              />
+                              <path
+                                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                                fill="currentFill"
+                              />
+                            </svg>
+                            <span className="sr-only">Loading...</span>
+                          </div>
+                        ) : (
+                          <PieChartComponent
+                            addedProperties={
+                              ((rentListingCount - rentNotAvailableCount) /
+                                rentListingCount) *
+                              100
+                            }
+                            soldProperties={
+                              (rentNotAvailableCount / rentListingCount) * 100
+                            }
+                            propertytype="Property rent-out"
+                          />
+                        )}
+                        {/* <PieGraph /> */}
+                      </div>
+                      <div className="w-full md:w-1/2 xl:w-1/2 p-6">
+                        {usersCount && (
+                          <BarChartComponent
+                            April={usersCount?.twoMonthsAgo}
+                            May={usersCount?.lastMonth}
+                            June={usersCount?.currentMonth}
+                          />
+                        )}
+                      </div>
+                      {/* <div className="w-full md:w-1/2 xl:w-1/3 p-6"></div> */}
+                    </div>
+                    {loading ? (
+                      <div
+                        role="status "
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                          viewBox="0 0 100 101"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                            fill="currentFill"
+                          />
+                        </svg>
+                        <span className="sr-only">Loading...</span>
+                      </div>
+                    ) : (
+                      <UserTable
+                        page={page}
+                        getAllUsers={getAllUsers}
+                        users={users}
+                        totalUsers={totalUsers}
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        setUsers={setUsers}
                       />
                     )}
-                  </div>
-                  {/* <div className="w-full md:w-1/2 xl:w-1/3 p-6"></div> */}
-                </div>
-                {loading ? (
-                  <div
-                    role="status "
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
+                    {loading2 ? (
+                      <div
+                        role="status "
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                          viewBox="0 0 100 101"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                            fill="currentFill"
+                          />
+                        </svg>
+                        <span className="sr-only">Loading...</span>
+                      </div>
+                    ) : (
+                      <PropertiesTable
+                        setTotalListings={setTotalListings}
+                        totalListings={totalListings}
+                        totalPages2={totalPages2}
+                        currentPage2={currentPage2}
+                        listings={listings}
+                        setListings={setListings}
+                        page2={page2}
+                        getListing={getListing}
                       />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                    <span className="sr-only">Loading...</span>
-                  </div>
-                ) : (
-                  <UserTable
-                    page={page}
-                    getAllUsers={getAllUsers}
-                    users={users}
-                    totalUsers={totalUsers}
-                    totalPages={totalPages}
-                    currentPage={currentPage}
-                  />
+                    )}
+                  </>
                 )}
-                {loading2 ? (
-                  <div
-                    role="status "
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                      viewBox="0 0 100 101"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                        fill="currentFill"
-                      />
-                    </svg>
-                    <span className="sr-only">Loading...</span>
-                  </div>
-                ) : (
-                  <PropertiesTable
-                    totalListings={totalListings}
-                    totalPages2={totalPages2}
-                    currentPage2={currentPage2}
-                    listings={listings}
-                    page2={page2}
-                    getListing={getListing}
-                  />
-                )}
+                <YourProperties />
               </div>
             </section>
           ) : (

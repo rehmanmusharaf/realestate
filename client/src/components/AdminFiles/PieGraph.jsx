@@ -392,7 +392,7 @@ const PieChartComponent = ({
 
   // Data for the Pie chart
   const data = {
-    labels: ["Properties Added", propertytype],
+    labels: ["Pending", propertytype],
     datasets: [
       {
         data: [parseFloat(addedPercentage), parseFloat(soldPercentage)],
@@ -404,8 +404,8 @@ const PieChartComponent = ({
 
   useEffect(() => {
     if (chartRef.current) {
-      console.log("Chart data:", data);
-      console.log("Chart reference:", chartRef.current);
+      // console.log("Chart data:", data);
+      // console.log("Chart reference:", chartRef.current);
     }
   }, [data]);
 

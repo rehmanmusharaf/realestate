@@ -1,16 +1,14 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-// import userRouter from './api/routes/user.route.js';
 import userRouter from "./api/routes/user.route.js";
 import authRouter from "./api/routes/auth.route.js";
 import listingRouter from "./api/routes/listing.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-let Port = process.env.PORT || 4000;
-// import path from "path";
 dotenv.config();
+const Port = 4000 || process.env.PORT;
 
 mongoose
   .connect(process.env.MONGO)
@@ -22,17 +20,25 @@ mongoose
   });
 
 const app = express();
-app.use(cors());
+
+// Enable CORS with credentials
+app.use(
+  cors({
+    origin: "http://localhost:5173", // replace with your frontend URL
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
-
 app.listen(Port, () => {
   console.log("Server is running on port ", `${Port}`);
+  // console.log("user Token is: ", req.cookies.access_token);
 });
+
 app.get("/", (req, res) => {
   try {
-    return res.send("<h1>Server IS Listning!</h1>");
+    return res.send("<h1>Server IS Listening!</h1>");
   } catch (error) {
     console.log("error Something Went Wrong!");
     return res
@@ -40,6 +46,7 @@ app.get("/", (req, res) => {
       .json({ message: "Something Went Wrong!", error: error.message });
   }
 });
+
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/listing", listingRouter);
