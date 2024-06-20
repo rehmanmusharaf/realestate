@@ -57,7 +57,9 @@ const AdminDashboard = () => {
       // page = page;
       // setPage(page);
       setLoading(true);
-      const { data } = await axios.get(`/api/user/getallusers?page=${page}`);
+      const { data } = await axios.get(`/api/user/getallusers?page=${page}`, {
+        withCredentials: true,
+      });
       console.log("data is: ", data);
       let arr = data.users;
       setUsers((prevUsers) => {

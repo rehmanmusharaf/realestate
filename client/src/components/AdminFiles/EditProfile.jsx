@@ -20,6 +20,7 @@ import { useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 export default function EditProfile() {
   const { id } = useParams();
   const fileRef = useRef(null);
@@ -95,6 +96,7 @@ export default function EditProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log("handle submit run!");
       //   dispatch(updateUserStart());
       const res = await fetch(`/api/user/updatebyadmin/${id}`, {
         method: "POST",
@@ -103,14 +105,18 @@ export default function EditProfile() {
         },
         body: JSON.stringify(formData),
       });
+      console.log("data is: ", res);
       const data = await res.json();
       if (data.success === false) {
         return;
       }
 
+      toast.success("User Profile Updated Successfully!");
       //   dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
     } catch (error) {
+      console.log("error is: ", error);
+      toast.error("Something Went Wrong!");
       dispatch(updateUserFailure(error.message));
     }
   };
@@ -150,7 +156,8 @@ export default function EditProfile() {
   const handleShowListings = async () => {
     try {
       const { data } = await axios.get(
-        `http://localhost:4000/api/user/listingsbyadmin/${id}`
+        `http://localhost:4000/api/user/listingsbyadmin/${id}`,
+        { withCredentials: true }
       );
       //   const data = await res.json();
       console.log("User Listing Data is: ", data);

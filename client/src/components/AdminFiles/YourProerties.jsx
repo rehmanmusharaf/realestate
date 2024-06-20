@@ -108,7 +108,7 @@ const YourProperties = (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-12 mb-3">
       <div className="flex justify-between items-center flex-wrap">
         <h2 className="text-2xl font-semibold w-1/2">
-          Registered Properties For Sale - {listings}
+          Your Registered Properties For Sale - {listings}
         </h2>
         <form className="max-w-md mx-auto w-1/2">
           <label

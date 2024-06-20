@@ -8,6 +8,7 @@ import {
   getAllUsers,
   getUserbyAdmin,
   getUserListingsbyadmin,
+  updateUserbyadmin,
 } from "../controllers/user.controller.js";
 import { verifyToken, verifyadminToken } from "../utils/verifyUser.js";
 const router = express.Router();
@@ -19,7 +20,7 @@ router.get("/listingsbyadmin/:id", verifyadminToken, getUserListingsbyadmin);
 router.get("/getallusers", verifyadminToken, getAllUsers);
 router.get("/:id", verifyToken, getUser);
 router.get("/getuserbyadmin/:id", verifyadminToken, getUserbyAdmin);
-router.post("/updatebyadmin/:id", verifyadminToken, updateUser);
+router.post("/updatebyadmin/:id", verifyadminToken, updateUserbyadmin);
 router.delete("/deletebyadmin/:id", verifyadminToken, deleteUser);
 // router.get("/listingsbyadmin/:id", getUserListings);
 export default router;
