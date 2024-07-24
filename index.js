@@ -24,7 +24,7 @@ const app = express();
 // Enable CORS with credentials
 app.use(
   cors({
-    origin: "http://localhost:5173", // replace with your frontend URL
+    origin: "https://gilded-sprite-b80903.netlify.app", // replace with your frontend URL
     credentials: true,
   })
 );
