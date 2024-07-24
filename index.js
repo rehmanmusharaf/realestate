@@ -24,7 +24,7 @@ const app = express();
 // Enable CORS with credentials
 app.use(
   cors({
-    origin: "https://gilded-sprite-b80903.netlify.app", // replace with your frontend URL
+    origin: "https://66a14e862879e427c75d7a27--glistening-pavlova-dc22e7.netlify.app", // replace with your frontend URL
     credentials: true,
   })
 );
